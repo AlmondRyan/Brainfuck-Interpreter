@@ -3,6 +3,8 @@ project(bfInterpreter)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(bfInterpreter main.cpp
-        interpreter.hpp
-        utils.hpp)
+add_executable(Rikyuu main.cpp
+        includes/defs/defs.hpp)
+
+add_subdirectory(src/)
+include_directories(includes/)
