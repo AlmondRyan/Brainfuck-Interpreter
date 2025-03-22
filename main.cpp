@@ -1,35 +1,22 @@
 #include <iostream>
-#include "interpreter.hpp"
-#include "utils.hpp"
+#include "src/brainfuck/interpreter.h"
 
-namespace YAOBIWrapper {
-    YAOBI::Version version;
-    void initData() {
-        version = YAOBI::Version(1, 0, 0);
-    }
-
-    void displayInfos() {
-        initData();
-        std::cout << "YAOBI (Yet Another Optimized Brainfuck Interpreter)" << std::endl;
-        std::string versionStr = std::to_string(version.major) + "." + std::to_string(version.minor) +
-                "." + std::to_string(version.patch) + version.preRelease + version.buildMetadata;
-        std::string systemVersion = YAOBI::GetSysVersion(), systemBit = std::to_string(YAOBI::GetSysBit());
-        std::cout << "Version: " << versionStr << " - " << systemVersion << "[" << systemBit << "]" << std::endl;
-        std::cout << "Copyright (c) 2025 Ryan \"Nvkopres\" Almond, All rights reserved." << std::endl;
-        std::cout << "This project licensed under MIT License." << std::endl;
-        std::cout << std::endl;
-    }
-}
-
+using namespace Rikkyu::Brainfuck;
 
 int main(int argc, char **argv) {
-    YAOBIWrapper::displayInfos();
-    std::string code, res;
-    std::getline(std::cin, code);
+    std::string str; std::getline(std::cin, str);
 
-    BrainfuckInterpreter::BrainfuckInterpreter bfitp;
-    res = bfitp.interpret(code);
+    std::vector<char> prog;
+    for (auto i : str) {
+        prog.push_back(i);
+    }
 
-    std::cout << res << std::endl;
+    try {
+        auto expressions = Parser().parse(prog);
+        Runner().run(expressions);
+    } catch (std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+
     return 0;
 }

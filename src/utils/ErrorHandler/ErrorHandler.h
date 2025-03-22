@@ -17,24 +17,25 @@ namespace Rikkyu::utils {
     };
 
     struct ErrorObj {
-        ErrorType type;
-        size_t pos;
+        ErrorType   type;
+        size_t      pos;
         std::string text;
 
         explicit ErrorObj(ErrorType _t, size_t _p, std::string _te)
-                : type(_t), pos(_p), text(std::move(_te)) {}
+            : type(_t), pos(_p), text(std::move(_te)) {}
     };
 
     class ErrorHandler {
     public:
-        RIK_INLINE void makeWarning(const std::string &warningText, size_t pos);
-        RIK_INLINE void makeError(const std::string &errorText, size_t pos);
-        RIK_INLINE void makeNotice(const std::string &noteText, size_t pos);
+        void makeWarning(const std::string &warningText, size_t pos);
+        void makeError(const std::string &errorText, size_t pos);
+        void makeNotice(const std::string &noteText, size_t pos);
 
         void printErrors();
+
     private:
         std::vector<ErrorObj> errors;
     };
-}
+} // namespace Rikkyu::utils
 
 #endif // RIK_ERRORHANDLER_H
