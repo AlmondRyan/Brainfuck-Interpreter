@@ -67,24 +67,10 @@ namespace Rikkyu::Brainfuck {
             for (const auto &expression : expressions) {
                 expression->run(*this);
             }
-            handler_.printErrors();
-        }
-
-        void reportError(const std::string &message, size_t position) {
-            handler_.makeError(message, position);
-        }
-
-        void reportWarning(const std::string &message, size_t position) {
-            handler_.makeWarning(message, position);
-        }
-
-        utils::ErrorHandler &getErrorHandler() {
-            return handler_;
         }
 
     private:
-        Memory<>            memory_;
-        utils::ErrorHandler handler_;
+        Memory<> memory_;
     };
 
     class IncrementExpression : public Expression {
@@ -138,7 +124,7 @@ namespace Rikkyu::Brainfuck {
         PointerForwardExpression(ssize_t offset) : Expression(), offset_(offset) {}
         void run(Runner &runner) const override {
             if (!runner.memory().memory_pointerShiftForward(offset_)) {
-                runner.reportError("[BFE01]: Memory pointer forward out of bounds", 0);
+                utils::ErrorHandler::getInstance().makeError("[BFE01]: Memory pointer forward out of bounds", 0);
             }
         }
         virtual void accept(ExpressionVisitor &visitor) const {
@@ -163,7 +149,7 @@ namespace Rikkyu::Brainfuck {
         explicit PointerBackwardExpression(ssize_t offset) : Expression(), offset_(offset) {}
         void run(Runner &runner) const override {
             if (!runner.memory().memory_pointerShiftBackward(offset_)) {
-                runner.reportError("[BFE02]: Memory pointer backward out of bounds", 0);
+                utils::ErrorHandler::getInstance().makeError("[BFE02]: Memory pointer backward out of bounds", 0);
             }
         }
         virtual void accept(ExpressionVisitor &visitor) const {
@@ -188,7 +174,7 @@ namespace Rikkyu::Brainfuck {
         void run(Runner &runner) const override {
             int ch = getchar();
             if (ch == EOF) {
-                runner.reportWarning("[BFW01]: Input stream reached EOF.", 0);
+                utils::ErrorHandler::getInstance().makeWarning("[BFW01]: Input stream reached EOF.", 0);
                 return;
             }
             runner.memory().memory_pointerByteWriteData(static_cast<unsigned int>(ch));
@@ -264,7 +250,7 @@ namespace Rikkyu::Brainfuck {
         ExpressionVector parse(TokenVector &);
 
     private:
-        utils::ErrorHandler handler;
+//        utils::ErrorHandler handler;
     };
 
     ExpressionVector Parser::parse(TokenVector &tokens) {
@@ -303,7 +289,7 @@ namespace Rikkyu::Brainfuck {
                 break;
             case ']':
                 if (stack.empty()) {
-                    handler.makeError("[BFE03]: 未匹配的 ']'", position);
+                    utils::ErrorHandler::getInstance().makeError("[BFE03]: Unmatched ']'", position);
                     return {};
                 }
                 next = ExpressionPtr(new LoopExpression(std::move(*expressions)));
@@ -311,7 +297,6 @@ namespace Rikkyu::Brainfuck {
                 stack.pop_back();
                 break;
             default:
-                // 忽略其他字符
                 continue;
             }
 
@@ -326,14 +311,11 @@ namespace Rikkyu::Brainfuck {
             }
         }
 
-        // 检查是否有未匹配的 '['
         if (!stack.empty()) {
-            handler.makeError("[BFE03]: 未匹配的 '['", position);
-            return {};
+            utils::ErrorHandler::getInstance().makeError("[BFE03]: Unmatched '['", position);
         }
 
-        handler.printErrors();
-        if (handler.hasErrors()) {
+        if (utils::ErrorHandler::getInstance().hasErrors()) {
             return {};
         } else {
             return std::move(*expressions);
