@@ -27,15 +27,26 @@ namespace Rikkyu::utils {
 
     class ErrorHandler {
     public:
+        // 获取单例实例
+        static ErrorHandler& getInstance();
+
+        // 删除拷贝构造函数和赋值运算符
+        ErrorHandler(const ErrorHandler&) = delete;
+        ErrorHandler& operator=(const ErrorHandler&) = delete;
+
         void makeWarning(const std::string &warningText, size_t pos);
         void makeError(const std::string &errorText, size_t pos);
         void makeNotice(const std::string &noteText, size_t pos);
 
         void printErrors();
+        void clearErrors();
         bool hasErrors() {
             return !errors.empty();
         }
     private:
+        // 私有构造函数
+        ErrorHandler() = default;
+        
         std::vector<ErrorObj> errors;
     };
 } // namespace Rikkyu::utils

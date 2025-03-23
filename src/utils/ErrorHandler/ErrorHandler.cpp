@@ -2,6 +2,12 @@
 #include "utils/ConsoleTextManager/ConsoleTextManager.h"
 
 namespace Rikkyu::utils {
+    // 单例实例获取方法
+    ErrorHandler& ErrorHandler::getInstance() {
+        static ErrorHandler instance;
+        return instance;
+    }
+
     void ErrorHandler::makeWarning(const std::string &warningText, size_t pos) {
         errors.emplace_back(ErrorType::ET_Warning, pos, warningText);
     }
@@ -31,5 +37,9 @@ namespace Rikkyu::utils {
                     Rikkyu::utils::Colors::CTM_Default << ": At " << i.pos << ", " << i.text << std::endl;
             }
         }
+    }
+
+    void ErrorHandler::clearErrors() {
+        errors.clear();
     }
 }
