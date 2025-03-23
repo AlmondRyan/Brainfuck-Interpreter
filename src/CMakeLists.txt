@@ -4,6 +4,7 @@ add_library(Rikkyu_Source
         utils/ErrorHandler/ErrorHandler.cpp
         utils/ErrorHandler/ErrorHandler.h
         utils/ConsoleTextManager/ConsoleTextManager.h
+        brainfuck/AbstractExpression.h
 )
 
 target_include_directories(Rikkyu_Source PUBLIC

@@ -3,170 +3,239 @@
 #include <memory>
 #include <vector>
 
+#include "../utils/ErrorHandler/ErrorHandler.h"
+#include "AbstractExpression.h"
+#include "defs/defs.hpp"
+
 namespace Rikkyu::Brainfuck {
-
-    template <typename T = unsigned int>
+    template <typename Tp = unsigned int>
     class Memory {
-    private:
-        std::array<T, 30000>                 memory_;
-        typename decltype(memory_)::iterator ptr_;
-
     public:
         Memory() : memory_(), ptr_(memory_.begin()) {}
         ~Memory() = default;
 
-        inline void inc(T offset) { *this->ptr_ += offset; }
-        inline void dec(T offset) { *this->ptr_ -= offset; }
-        inline void fwd(ssize_t offset) { this->ptr_ += offset; }
-        inline void bwd(ssize_t offset) { this->ptr_ -= offset; }
+        RIK_INLINE void memory_byteIncrease(Tp offset) {
+            *this->ptr_ += offset;
+        }
 
-        inline T    read() const { return *this->ptr_; }
-        inline void write(T c) { *this->ptr_ = c; }
-    };
+        RIK_INLINE void memory_byteDecrease(Tp offset) {
+            *this->ptr_ -= offset;
+        }
 
-    class Increment;
-    class Decrement;
-    class Forward;
-    class Backward;
-    class Input;
-    class Output;
-    class Loop;
+        RIK_INLINE bool memory_pointerShiftForward(ssize_t offset) {
+            if (ptr_ + offset >= memory_.end()) {
+                return false;
+            }
+            this->ptr_ += offset;
+            return true;
+        }
 
-    class ExpressionVisitor {
-    public:
-        virtual void visit(const Increment &) = 0;
-        virtual void visit(const Decrement &) = 0;
-        virtual void visit(const Forward &) = 0;
-        virtual void visit(const Backward &) = 0;
-        virtual void visit(const Input &) = 0;
-        virtual void visit(const Output &) = 0;
-        virtual void visit(const Loop &) = 0;
-    };
+        RIK_INLINE bool memory_pointerShiftBackward(ssize_t offset) {
+            if (ptr_ - offset < memory_.begin()) {
+                return false;
+            }
+            this->ptr_ -= offset;
+            return true;
+        }
 
-    class Runner;
-    class Expression {
-    public:
-        Expression() {}
-        virtual ~Expression() {}
+        [[nodiscard]] RIK_INLINE Tp memory_pointerByteReadData() const {
+            return *this->ptr_;
+        }
 
-        virtual void run(Runner &runner) const = 0;
-        virtual void accept(ExpressionVisitor &visitor) const = 0;
-        virtual bool repeatable() const { return false; }
-        virtual void repeat() {}
+        RIK_INLINE void memory_pointerByteWriteData(Tp c) {
+            *this->ptr_ = c;
+        }
+
+    private:
+        std::array<Tp, 30000>                memory_;
+        typename decltype(memory_)::iterator ptr_;
     };
 
     using ExpressionPtr = std::unique_ptr<Expression>;
     using ExpressionVector = std::vector<ExpressionPtr>;
 
     class Runner {
-    private:
-        Memory<> memory_;
-
     public:
-        Runner() = default;
+        Runner() : memory_() {}
         ~Runner() = default;
 
-        inline Memory<> &memory() { return memory_; };
+        inline Memory<> &memory() {
+            return memory_;
+        };
 
         void run(const ExpressionVector &expressions) {
             for (const auto &expression : expressions) {
                 expression->run(*this);
             }
-        }
-    };
-
-    class Increment : public Expression {
-    private:
-        ssize_t offset_;
-
-    public:
-        Increment(ssize_t offset) : Expression(), offset_(offset) {}
-        virtual void run(Runner &runner) const { runner.memory().inc(offset_); }
-        virtual void accept(ExpressionVisitor &visitor) const { visitor.visit(*this); }
-        virtual bool repeatable() const { return true; }
-        virtual void repeat() { ++offset_; }
-        ssize_t      offset() const { return offset_; }
-    };
-
-    class Decrement : public Expression {
-    private:
-        ssize_t offset_;
-
-    public:
-        Decrement(ssize_t offset) : Expression(), offset_(offset) {}
-        virtual void run(Runner &runner) const { runner.memory().dec(offset_); }
-        virtual void accept(ExpressionVisitor &visitor) const { visitor.visit(*this); }
-        virtual bool repeatable() const { return true; }
-        virtual void repeat() { ++offset_; }
-        ssize_t      offset() const { return offset_; }
-    };
-
-    class Forward : public Expression {
-    private:
-        ssize_t offset_;
-
-    public:
-        Forward(ssize_t offset) : Expression(), offset_(offset) {}
-        virtual void run(Runner &runner) const { runner.memory().fwd(offset_); }
-        virtual void accept(ExpressionVisitor &visitor) const { visitor.visit(*this); }
-        virtual bool repeatable() const { return true; }
-        virtual void repeat() { ++offset_; }
-        ssize_t      offset() const { return offset_; }
-    };
-
-    class Backward : public Expression {
-    private:
-        ssize_t offset_;
-
-    public:
-        Backward(ssize_t offset) : Expression(), offset_(offset) {}
-        virtual void run(Runner &runner) const { runner.memory().bwd(offset_); }
-        virtual void accept(ExpressionVisitor &visitor) const { visitor.visit(*this); }
-        virtual bool repeatable() const { return true; }
-        virtual void repeat() { ++offset_; }
-        ssize_t      offset() const { return offset_; }
-    };
-
-    class Input : public Expression {
-    public:
-        virtual void run(Runner &runner) const {
-            runner.memory().write(getchar());
-            if (runner.memory().read() == EOF)
-                exit(0);
+            handler_.printErrors();
         }
 
+        void reportError(const std::string &message, size_t position) {
+            handler_.makeError(message, position);
+        }
+
+        void reportWarning(const std::string &message, size_t position) {
+            handler_.makeWarning(message, position);
+        }
+
+        utils::ErrorHandler &getErrorHandler() {
+            return handler_;
+        }
+
+    private:
+        Memory<>            memory_;
+        utils::ErrorHandler handler_;
+    };
+
+    class IncrementExpression : public Expression {
+    public:
+        explicit IncrementExpression(ssize_t offset) : Expression(), offset_(offset) {}
+        void run(Runner &runner) const override {
+            runner.memory().memory_byteIncrease(offset_);
+        }
+        void accept(ExpressionVisitor &visitor) const override {
+            visitor.visit(*this);
+        }
+        [[nodiscard]] bool repeatable() const override {
+            return true;
+        }
+        void repeat() override {
+            ++offset_;
+        }
+        [[maybe_unused]] [[nodiscard]] ssize_t offset() const {
+            return offset_;
+        }
+
+    private:
+        ssize_t offset_;
+    };
+
+    class DecrementExpression : public Expression {
+    public:
+        explicit DecrementExpression(ssize_t offset) : Expression(), offset_(offset) {}
+        void run(Runner &runner) const override {
+            runner.memory().memory_byteDecrease(offset_);
+        }
         virtual void accept(ExpressionVisitor &visitor) const {
             visitor.visit(*this);
         }
+        virtual bool repeatable() const {
+            return true;
+        }
+        virtual void repeat() {
+            ++offset_;
+        }
+        ssize_t offset() const {
+            return offset_;
+        }
+
+    private:
+        ssize_t offset_;
     };
 
-    class Output : public Expression {
+    class PointerForwardExpression : public Expression {
+    public:
+        PointerForwardExpression(ssize_t offset) : Expression(), offset_(offset) {}
+        void run(Runner &runner) const override {
+            if (!runner.memory().memory_pointerShiftForward(offset_)) {
+                runner.reportError("[BFE01]: Memory pointer forward out of bounds", 0);
+            }
+        }
+        virtual void accept(ExpressionVisitor &visitor) const {
+            visitor.visit(*this);
+        }
+        virtual bool repeatable() const {
+            return true;
+        }
+        virtual void repeat() {
+            ++offset_;
+        }
+        ssize_t offset() const {
+            return offset_;
+        }
+
+    private:
+        ssize_t offset_;
+    };
+
+    class PointerBackwardExpression : public Expression {
+    public:
+        explicit PointerBackwardExpression(ssize_t offset) : Expression(), offset_(offset) {}
+        void run(Runner &runner) const override {
+            if (!runner.memory().memory_pointerShiftBackward(offset_)) {
+                runner.reportError("[BFE02]: Memory pointer backward out of bounds", 0);
+            }
+        }
+        virtual void accept(ExpressionVisitor &visitor) const {
+            visitor.visit(*this);
+        }
+        virtual bool repeatable() const {
+            return true;
+        }
+        virtual void repeat() {
+            ++offset_;
+        }
+        ssize_t offset() const {
+            return offset_;
+        }
+
+    private:
+        ssize_t offset_;
+    };
+
+    class InputExpression : public Expression {
+    public:
+        void run(Runner &runner) const override {
+            int ch = getchar();
+            if (ch == EOF) {
+                runner.reportWarning("[BFW01]: Input stream reached EOF.", 0);
+                return;
+            }
+            runner.memory().memory_pointerByteWriteData(static_cast<unsigned int>(ch));
+        }
+        virtual void accept(ExpressionVisitor &visitor) const {
+            visitor.visit(*this);
+        }
+
+        virtual bool repeatable() const {
+            return false;
+        }
+
+        virtual void repeat() {}
+    };
+
+    class OutputExpression : public Expression {
     public:
         virtual void run(Runner &runner) const {
-            putchar(runner.memory().read());
+            putchar(runner.memory().memory_pointerByteReadData());
             fflush(stdout);
         }
 
         virtual void accept(ExpressionVisitor &visitor) const {
             visitor.visit(*this);
         }
+
+        virtual bool repeatable() const {
+            return false;
+        }
+
+        virtual void repeat() {}
     };
 
-    class Loop : public Expression {
-    private:
-        ExpressionVector children_;
-
+    class LoopExpression : public Expression {
     public:
-        Loop(ExpressionVector &&children)
+        explicit LoopExpression(ExpressionVector &&children)
             : Expression(),
               children_(std::move(children)) {}
 
-        Loop(const Loop &) = delete;
+        LoopExpression(const LoopExpression &) = delete;
 
-        const ExpressionVector &children() const { return children_; }
+        [[nodiscard]] const ExpressionVector &children() const {
+            return children_;
+        }
 
-        virtual void run(Runner &runner) const {
-            while (runner.memory().read() > 0) {
+        void run(Runner &runner) const override {
+            while (runner.memory().memory_pointerByteReadData() > 0) {
                 runner.run(children_);
             }
         }
@@ -174,21 +243,18 @@ namespace Rikkyu::Brainfuck {
         virtual void accept(ExpressionVisitor &visitor) const {
             visitor.visit(*this);
         }
+
+        virtual bool repeatable() const {
+            return false;
+        }
+
+        void repeat() override {}
+
+    private:
+        ExpressionVector children_;
     };
 
     using TokenVector = std::vector<char>;
-
-    class ExcessiveOpeningBrackets : public std::exception {
-        virtual const char *what() const throw() {
-            return "Too many opening brackets";
-        }
-    };
-
-    class UnexpectedClosingBracket : public std::exception {
-        virtual const char *what() const throw() {
-            return "Too many closing brackets";
-        }
-    };
 
     class Parser {
     public:
@@ -196,6 +262,9 @@ namespace Rikkyu::Brainfuck {
         ~Parser() = default;
 
         ExpressionVector parse(TokenVector &);
+
+    private:
+        utils::ErrorHandler handler;
     };
 
     ExpressionVector Parser::parse(TokenVector &tokens) {
@@ -203,40 +272,47 @@ namespace Rikkyu::Brainfuck {
 
         std::vector<ExpressionVectorPtr> stack;
         ExpressionVectorPtr              expressions(new ExpressionVector());
+        size_t                           position = 0;
 
         for (auto token : tokens) {
             ExpressionPtr next;
+            position++;
 
             switch (token) {
             case '+':
-                next = ExpressionPtr(new Increment(1));
+                next = ExpressionPtr(new IncrementExpression(1));
                 break;
             case '-':
-                next = ExpressionPtr(new Decrement(1));
+                next = ExpressionPtr(new DecrementExpression(1));
                 break;
             case '>':
-                next = ExpressionPtr(new Forward(1));
+                next = ExpressionPtr(new PointerForwardExpression(1));
                 break;
             case '<':
-                next = ExpressionPtr(new Backward(1));
+                next = ExpressionPtr(new PointerBackwardExpression(1));
                 break;
             case ',':
-                next = ExpressionPtr(new Input());
+                next = ExpressionPtr(new InputExpression());
                 break;
             case '.':
-                next = ExpressionPtr(new Output());
+                next = ExpressionPtr(new OutputExpression());
                 break;
             case '[':
                 stack.push_back(std::move(expressions));
-                expressions = ExpressionVectorPtr(new ExpressionVector());
+                expressions = std::make_unique<ExpressionVector>();
                 break;
             case ']':
-                if (stack.empty())
-                    throw UnexpectedClosingBracket();
-                next = ExpressionPtr(new Loop(std::move(*expressions)));
+                if (stack.empty()) {
+                    handler.makeError("[BFE03]: 未匹配的 ']'", position);
+                    return {};
+                }
+                next = ExpressionPtr(new LoopExpression(std::move(*expressions)));
                 expressions = std::move(stack.back());
                 stack.pop_back();
                 break;
+            default:
+                // 忽略其他字符
+                continue;
             }
 
             if (!next) {
@@ -250,10 +326,17 @@ namespace Rikkyu::Brainfuck {
             }
         }
 
-        if (!stack.empty())
-            throw ExcessiveOpeningBrackets();
+        // 检查是否有未匹配的 '['
+        if (!stack.empty()) {
+            handler.makeError("[BFE03]: 未匹配的 '['", position);
+            return {};
+        }
 
-        return std::move(*expressions);
+        handler.printErrors();
+        if (handler.hasErrors()) {
+            return {};
+        } else {
+            return std::move(*expressions);
+        }
     }
-
-}
+} // namespace Rikkyu::Brainfuck

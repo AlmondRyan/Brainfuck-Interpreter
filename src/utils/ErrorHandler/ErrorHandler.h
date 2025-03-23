@@ -32,7 +32,9 @@ namespace Rikkyu::utils {
         void makeNotice(const std::string &noteText, size_t pos);
 
         void printErrors();
-
+        bool hasErrors() {
+            return !errors.empty();
+        }
     private:
         std::vector<ErrorObj> errors;
     };

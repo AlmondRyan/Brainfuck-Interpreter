@@ -13,7 +13,10 @@ int main(int argc, char **argv) {
 
     try {
         auto expressions = Parser().parse(prog);
-        Runner().run(expressions);
+        if (!expressions.empty()) {
+            Runner runner;
+            runner.run(expressions);
+        }
     } catch (std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
     }
