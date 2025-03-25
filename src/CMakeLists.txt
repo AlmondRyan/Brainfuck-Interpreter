@@ -1,11 +1,22 @@
 add_library(Rikkyu_Source
+        # Brainfuck
+        brainfuck/AbstractExpression.h
         brainfuck/interpreter.h
+
+        # Whitespace
+        whitespace/interpreter.h
+        whitespace/AbstractExpression.h
+        whitespace/expressions/ArithmeticExpressions.h
+        whitespace/expressions/FlowExpressions.h
+        whitespace/expressions/HeapExpressions.h
+        whitespace/expressions/IOExpressions.h
+        whitespace/expressions/StackExpressions.h
+
+        # Utility
         utils/ErrorHandler/ErrorHandler.cpp
         utils/ErrorHandler/ErrorHandler.h
         utils/ConsoleTextManager/ConsoleTextManager.h
-        brainfuck/AbstractExpression.h
-        whitespace/interpreter.h
-        whitespace/AbstractExpression.h
+        utils/StringBuilder/StringBuilder.h
 )
 
 target_include_directories(Rikkyu_Source PUBLIC
