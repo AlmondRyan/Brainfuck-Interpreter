@@ -3,9 +3,10 @@
 #define RIK_WS_STACK_EXPRESSIONS
 
 #include "../AbstractExpression.h"
-#include "../interpreter.h"
+#include "../Runner.h"
 
 namespace Rikkyu::Whitespace {
+    class Runner;
     class StackPushExpression : public Expression {
     public:
         explicit StackPushExpression(int value) : value_(value) {}
@@ -16,6 +17,10 @@ namespace Rikkyu::Whitespace {
 
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
+        }
+
+        std::string toIR() const override {
+            return "PUSH " + std::to_string(value_);
         }
 
     private:
@@ -31,6 +36,10 @@ namespace Rikkyu::Whitespace {
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
         }
+
+        std::string toIR() const override {
+            return "DUP";
+        }
     };
 
     class StackCopyExpression : public Expression {
@@ -43,6 +52,10 @@ namespace Rikkyu::Whitespace {
 
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
+        }
+
+        std::string toIR() const override {
+            return "COPY " + std::to_string(n_);
         }
 
     private:
@@ -58,6 +71,10 @@ namespace Rikkyu::Whitespace {
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
         }
+
+        std::string toIR() const override {
+            return "SWAP";
+        }
     };
 
     class StackDiscardExpression : public Expression {
@@ -68,6 +85,10 @@ namespace Rikkyu::Whitespace {
 
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
+        }
+
+        std::string toIR() const override {
+            return "DROP";
         }
     };
 
@@ -81,6 +102,10 @@ namespace Rikkyu::Whitespace {
 
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
+        }
+
+        std::string toIR() const override {
+            return "SLIDE " + std::to_string(n_);
         }
 
     private:

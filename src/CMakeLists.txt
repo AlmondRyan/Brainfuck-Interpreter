@@ -17,6 +17,7 @@ add_library(Rikkyu_Source
         utils/ErrorHandler/ErrorHandler.h
         utils/ConsoleTextManager/ConsoleTextManager.h
         utils/StringBuilder/StringBuilder.h
+        whitespace/Runner.cpp
 )
 
 target_include_directories(Rikkyu_Source PUBLIC

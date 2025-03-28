@@ -64,9 +64,9 @@ namespace Rikkyu::Whitespace {
     public:
         Expression() = default;
         virtual ~Expression() = default;
-
-        virtual void run(Runner &runner) const = 0;
+        virtual void run(class Runner &runner) const = 0;
         virtual void accept(ExpressionVisitor &visitor) const = 0;
+        virtual std::string toIR() const = 0;
     };
 }
 

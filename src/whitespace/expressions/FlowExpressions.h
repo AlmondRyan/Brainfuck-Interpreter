@@ -3,7 +3,7 @@
 #define RIK_WS_FLOW_EXPRESSIONS
 
 #include "../AbstractExpression.h"
-#include "../interpreter.h"
+#include "../Runner.h"
 #include "../../utils/ErrorHandler/ErrorHandler.h"
 #include "../../utils/StringBuilder/StringBuilder.h"
 
@@ -19,6 +19,10 @@ namespace Rikkyu::Whitespace {
 
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
+        }
+
+        std::string toIR() const override {
+            return "LABEL " + label_;
         }
 
     private:
@@ -38,6 +42,10 @@ namespace Rikkyu::Whitespace {
             visitor.visit(*this);
         }
 
+        std::string toIR() const override {
+            return "CALL " + label_;
+        }
+
     private:
         std::string label_;
     };
@@ -52,6 +60,10 @@ namespace Rikkyu::Whitespace {
 
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
+        }
+
+        std::string toIR() const override {
+            return "JUMP " + label_;
         }
 
     private:
@@ -70,6 +82,10 @@ namespace Rikkyu::Whitespace {
             visitor.visit(*this);
         }
 
+        std::string toIR() const override {
+            return "JUMP_ZERO " + label_;
+        }
+
     private:
         std::string label_;
     };
@@ -86,6 +102,10 @@ namespace Rikkyu::Whitespace {
             visitor.visit(*this);
         }
 
+        std::string toIR() const override {
+            return "JUMP_NEG " + label_;
+        }
+
     private:
         std::string label_;
     };
@@ -99,6 +119,10 @@ namespace Rikkyu::Whitespace {
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
         }
+
+        std::string toIR() const override {
+            return "RETURN";
+        }
     };
 
     class FlowExitExpression : public Expression {
@@ -109,6 +133,10 @@ namespace Rikkyu::Whitespace {
 
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
+        }
+
+        std::string toIR() const override {
+            return "EXIT";
         }
     };
 } // namespace Rikkyu::Whitespace

@@ -28,13 +28,13 @@ namespace Rikkyu::utils {
         for (auto &i : errors) {
             if (i.type == ErrorType::ET_CriticalError) {
                 std::cout << Rikkyu::utils::Colors::CTM_Red << "[Error]" <<
-                Rikkyu::utils::Colors::CTM_Default << ": At " << i.pos << ", " << i.text << std::endl;
+                Rikkyu::utils::Colors::CTM_Default << ": " << i.text << std::endl;
             } else if (i.type == ErrorType::ET_Warning) {
                 std::cout << Rikkyu::utils::Colors::CTM_Yellow << "[Warning]" <<
-                Rikkyu::utils::Colors::CTM_Default << ": At " << i.pos << ", " << i.text << std::endl;
+                Rikkyu::utils::Colors::CTM_Default << ": " << i.text << std::endl;
             } else if (i.type == ErrorType::ET_Notice) {
                 std::cout << Rikkyu::utils::Colors::CTM_Blue << "[Note]" <<
-                    Rikkyu::utils::Colors::CTM_Default << ": At " << i.pos << ", " << i.text << std::endl;
+                    Rikkyu::utils::Colors::CTM_Default << ": " << i.text << std::endl;
             }
         }
     }

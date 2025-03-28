@@ -3,7 +3,7 @@
 #define RIK_WS_ARITHMETIC_EXPRESSIONS
 
 #include "../AbstractExpression.h"
-#include "../interpreter.h"
+#include "../Runner.h"
 #include "../../utils/ErrorHandler/ErrorHandler.h"
 
 namespace Rikkyu::Whitespace {
@@ -19,6 +19,10 @@ namespace Rikkyu::Whitespace {
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
         }
+
+        std::string toIR() const override {
+            return "ADD";
+        }
     };
 
     class ArithmeticSubExpression : public Expression {
@@ -33,6 +37,10 @@ namespace Rikkyu::Whitespace {
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
         }
+
+        std::string toIR() const override {
+            return "SUB";
+        }
     };
 
     class ArithmeticMulExpression : public Expression {
@@ -46,6 +54,10 @@ namespace Rikkyu::Whitespace {
 
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
+        }
+
+        std::string toIR() const override {
+            return "MUL";
         }
     };
 
@@ -64,6 +76,10 @@ namespace Rikkyu::Whitespace {
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
         }
+
+        std::string toIR() const override {
+            return "DIV";
+        }
     };
 
     class ArithmeticModExpression : public Expression {
@@ -80,6 +96,10 @@ namespace Rikkyu::Whitespace {
 
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
+        }
+
+        std::string toIR() const override {
+            return "MOD";
         }
     };
 } // namespace Rikkyu::Whitespace

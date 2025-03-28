@@ -16,6 +16,8 @@
 #include "../utils/StringBuilder/StringBuilder.h"
 #include "AbstractExpression.h"
 #include "defs/defs.hpp"
+#include "Memory.h"
+#include "Runner.h"
 #include "expressions/StackExpressions.h"
 #include "expressions/ArithmeticExpressions.h"
 #include "expressions/HeapExpressions.h"
@@ -23,209 +25,27 @@
 #include "expressions/IOExpressions.h"
 
 namespace Rikkyu::Whitespace {
-    class Memory {
-    public:
-        Memory() = default;
-        ~Memory() = default;
-
-        RIK_INLINE void stackPush(int value) {
-            stack_.push(value);
-        }
-
-        RIK_INLINE int stackPop() {
-            if (stack_.empty()) {
-                utils::ErrorHandler::getInstance().makeError("[WSE01]: Stack underflow", 0);
-            }
-            int value = stack_.top();
-            stack_.pop();
-            return value;
-        }
-
-        [[nodiscard]] RIK_INLINE int stackPeek() const {
-            if (stack_.empty()) {
-                utils::ErrorHandler::getInstance().makeError("[WSE02]: Stack is Empty.", 0);
-            }
-            return stack_.top();
-        }
-
-        RIK_INLINE void stackDuplicate() {
-            if (stack_.empty()) {
-                utils::ErrorHandler::getInstance().makeError("[WSE02]: Stack is Empty.", 0);
-            }
-            stack_.push(stack_.top());
-        }
-
-        RIK_INLINE void stackCopy(int n) {
-            if (stack_.size() <= static_cast<size_t>(n) || n < 0) {
-                utils::ErrorHandler::getInstance().makeError("[WSE03]: Invalid access for main stack.", n);
-            }
-
-            std::stack<int> temp;
-            for (int i = 0; i < n; ++i) {
-                temp.push(stackPop());
-            }
-
-            int value = stack_.top();
-
-            while (!temp.empty()) {
-                stack_.push(temp.top());
-                temp.pop();
-            }
-
-            stack_.push(value);
-        }
-
-        RIK_INLINE void stackSwap() {
-            if (stack_.size() < 2) {
-                utils::ErrorHandler::getInstance().makeError("[WSE04]: Elements in stack are not enough to do swap operation.", 0);
-            }
-
-            int a = stackPop();
-            int b = stackPop();
-
-            stack_.push(a);
-            stack_.push(b);
-        }
-
-        RIK_INLINE void stackDiscard() {
-            if (stack_.empty()) {
-                utils::ErrorHandler::getInstance().makeError("[WSE02]: Stack is Empty.", 0);
-            }
-            stack_.pop();
-        }
-
-        RIK_INLINE void stackSlide(int n) {
-            if (stack_.size() < static_cast<size_t>(n) || n < 0) {
-                utils::ErrorHandler::getInstance().makeError("[WSE02]: Stack slide count is invalid.", n);
-            }
-
-            int top = stackPop();
-            for (int i = 0; i < n; ++i) {
-                stackPop();
-            }
-            stack_.push(top);
-        }
-
-        RIK_INLINE void heapStore(int address, int value) {
-            heap_[address] = value;
-        }
-
-        RIK_INLINE int heapRetrieve(int address) {
-            auto it = heap_.find(address);
-            if (it == heap_.end()) {
-                return 0;
-            }
-            return it->second;
-        }
-
-        [[nodiscard]] RIK_INLINE bool stackEmpty() const {
-            return stack_.empty();
-        }
-
-        [[nodiscard]] RIK_INLINE size_t stackSize() const {
-            return stack_.size();
-        }
-
-    private:
-        std::stack<int>    stack_;
-        std::map<int, int> heap_;
-    };
-
-    using ExpressionPtr = std::unique_ptr<Expression>;
-    using ExpressionVector = std::vector<ExpressionPtr>;
-
-    class Runner {
-    public:
-        Runner() : memory_(), callStack_() {}
-        ~Runner() = default;
-
-        inline Memory &memory() {
-            return memory_;
-        }
-
-        void run(const ExpressionVector &expressions) {
-            size_t pc = 0;
-            while (pc < expressions.size()) {
-                expressions[pc]->run(*this);
-                if (jumpTo_ != static_cast<size_t>(-1)) {
-                    pc = jumpTo_;
-                    jumpTo_ = static_cast<size_t>(-1);
-                } else {
-                    ++pc;
-                }
-            }
-        }
-
-        void reportError(const std::string &message, size_t position) {
-            utils::ErrorHandler::getInstance().makeError(message, position);
-        }
-
-        void reportWarning(const std::string &message, size_t position) {
-            utils::ErrorHandler::getInstance().makeWarning(message, position);
-        }
-
-        void setLabel(const std::string &label, size_t position) {
-            labels_[label] = position;
-        }
-
-        void jump(const std::string &label) {
-            auto it = labels_.find(label);
-            if (it == labels_.end()) {
-                utils::ErrorHandler::getInstance().makeError(utils::StringBuilder::concatenate("[WSE05]: Undefined Label: ", label), 0);
-            }
-            jumpTo_ = it->second;
-        }
-
-        void jumpIfZero(const std::string &label) {
-            if (memory_.stackPop() == 0) {
-                jump(label);
-            }
-        }
-
-        void jumpIfNegative(const std::string &label) {
-            if (memory_.stackPop() < 0) {
-                jump(label);
-            }
-        }
-
-        void call(const std::string &label) {
-            auto it = labels_.find(label);
-            if (it == labels_.end()) {
-                utils::ErrorHandler::getInstance().makeError(utils::StringBuilder::concatenate("[WSE05]: Undefined Label: ", label),
-                                                             0);
-            }
-            callStack_.push(jumpTo_ != static_cast<size_t>(-1) ? jumpTo_ : static_cast<size_t>(-1));
-            jumpTo_ = it->second;
-        }
-
-        void returnFromCall() {
-            if (callStack_.empty()) {
-                utils::ErrorHandler::getInstance().makeError("[WSE07]: Call stack overflow.", 0);
-            }
-            jumpTo_ = callStack_.top();
-            callStack_.pop();
-        }
-
-        void exit() {
-            jumpTo_ = static_cast<size_t>(-1);
-            utils::ErrorHandler::getInstance().makeError("[WSE06]: Program unexpected terminal.", 0);
-        }
-
-    private:
-        Memory                        memory_;
-        std::map<std::string, size_t> labels_;
-        std::stack<size_t>            callStack_;
-        size_t                        jumpTo_ = static_cast<size_t>(-1);
-    };
-
-
-
-
-
     class Parser {
     public:
         Parser() = default;
         ~Parser() = default;
+        
+        // 计算给定位置的行号和列号
+        std::pair<size_t, size_t> calculateLineCol(const std::vector<char> &code, size_t pos) {
+            size_t line = 1;
+            size_t col = 1;
+            
+            for (size_t i = 0; i < pos && i < code.size(); ++i) {
+                if (code[i] == '\n') {
+                    line++;
+                    col = 1;
+                } else {
+                    col++;
+                }
+            }
+            
+            return {line, col};
+        }
 
         ExpressionVector parse(const std::vector<char> &code) {
             ExpressionVector expressions;
@@ -243,11 +63,16 @@ namespace Rikkyu::Whitespace {
                         if (pos >= code.size())
                             break;
 
-                        if (code[pos] == ' ') { // Numbers push in stack
+                        if (code[pos] == ' ') { // Stack manipulation
                             ++pos;
-                            auto [value, newPos] = parseNumber(code, pos);
-                            expressions.push_back(std::make_unique<StackPushExpression>(value));
-                            pos = newPos;
+                            if (pos >= code.size()) break;
+                            
+                            if (code[pos] == ' ') { // Push number
+                                ++pos;
+                                auto [value, newPos] = parseNumber(code, pos);
+                                expressions.push_back(std::make_unique<StackPushExpression>(value));
+                                pos = newPos;
+                            }
                         } else if (code[pos] == '\t') {
                             ++pos;
                             if (pos >= code.size())
@@ -394,9 +219,10 @@ namespace Rikkyu::Whitespace {
                         }
                     }
                 } catch (const std::exception &e) {
+                    auto [line, col] = calculateLineCol(code, pos);
                     utils::ErrorHandler::getInstance().makeError(
-                        utils::StringBuilder::concatenate("[WSE09]: Parse error at: ", std::to_string(pos), ": ", e.what()),
-                        0);
+                        utils::StringBuilder::concatenate("[WSE09]: Parse error at line ", std::to_string(line), ", column ", std::to_string(col), ": ", e.what()),
+                        pos);
                 }
             }
 
@@ -405,24 +231,31 @@ namespace Rikkyu::Whitespace {
 
     private:
         std::pair<int, size_t> parseNumber(const std::vector<char> &code, size_t pos) {
-            if (pos >= code.size() || code[pos] != ' ' && code[pos] != '\t') {
-                utils::ErrorHandler::getInstance().makeError("[WSE10]: Expected number", 0);
+            if (pos >= code.size()) {
+                auto [line, col] = calculateLineCol(code, pos);
+                utils::ErrorHandler::getInstance().makeError(
+                    utils::StringBuilder::concatenate("[WSE10]: Expected number at line ", std::to_string(line), ", column ", std::to_string(col)),
+                    pos);
             }
 
             bool isNegative = false;
             if (code[pos] == '\t') {
                 isNegative = true;
+            } else if (code[pos] != ' ') {
+                auto [line, col] = calculateLineCol(code, pos);
+                utils::ErrorHandler::getInstance().makeError(
+                    utils::StringBuilder::concatenate("[WSE11]: Invalid number sign at line ", std::to_string(line), ", column ", std::to_string(col)),
+                    pos);
             }
 
             ++pos;
-
             int value = 0;
             while (pos < code.size() && code[pos] != '\n') {
-                value <<= 1;
-                if (code[pos] == '\t') {
-                    value |= 1;
-                } else if (code[pos] != ' ') {
-                    utils::ErrorHandler::getInstance().makeError("[WSE11]: Invalid number format", 0);
+                if (code[pos] == ' ' || code[pos] == '\t') {
+                    value <<= 1;
+                    if (code[pos] == '\t') {
+                        value |= 1;
+                    }
                 }
                 ++pos;
             }
@@ -438,18 +271,21 @@ namespace Rikkyu::Whitespace {
             std::string label;
 
             while (pos < code.size() && code[pos] != '\n') {
-                if (code[pos] == ' ') {
-                    label += '0';
-                } else if (code[pos] == '\t') {
-                    label += '1';
-                } else {
-                    utils::ErrorHandler::getInstance().makeError("[WSE12]: Invalid label format", 0);
+                if (code[pos] == ' ' || code[pos] == '\t') {
+                    label += (code[pos] == ' ' ? '0' : '1');
                 }
                 ++pos;
             }
 
             if (pos < code.size() && code[pos] == '\n') {
                 ++pos;
+            }
+
+            if (label.empty()) {
+                auto [line, col] = calculateLineCol(code, pos);
+                utils::ErrorHandler::getInstance().makeError(
+                    utils::StringBuilder::concatenate("[WSE12]: Empty label at line ", std::to_string(line), ", column ", std::to_string(col)),
+                    pos);
             }
 
             return {label, pos};

@@ -3,7 +3,7 @@
 #define RIK_WS_IO_EXPRESSIONS
 
 #include "../AbstractExpression.h"
-#include "../interpreter.h"
+#include "../Runner.h"
 #include <iostream>
 
 namespace Rikkyu::Whitespace {
@@ -16,6 +16,10 @@ namespace Rikkyu::Whitespace {
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
         }
+
+        std::string toIR() const override {
+            return "OUTCHAR";
+        }
     };
 
     class IOOutputNumExpression : public Expression {
@@ -26,6 +30,10 @@ namespace Rikkyu::Whitespace {
 
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
+        }
+
+        std::string toIR() const override {
+            return "OUTNUM";
         }
     };
 
@@ -40,6 +48,10 @@ namespace Rikkyu::Whitespace {
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
         }
+
+        std::string toIR() const override {
+            return "INCHAR";
+        }
     };
 
     class IOInputNumExpression : public Expression {
@@ -52,6 +64,10 @@ namespace Rikkyu::Whitespace {
 
         void accept(ExpressionVisitor &visitor) const override {
             visitor.visit(*this);
+        }
+
+        std::string toIR() const override {
+            return "INNUM";
         }
     };
 } // namespace Rikkyu::Whitespace

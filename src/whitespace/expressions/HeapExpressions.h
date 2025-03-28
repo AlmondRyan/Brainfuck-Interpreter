@@ -3,7 +3,7 @@
 #define RIK_WS_HEAP_EXPRESSIONS
 
 #include "../AbstractExpression.h"
-#include "../interpreter.h"
+#include "../Runner.h"
 
 namespace Rikkyu::Whitespace {
     class HeapStoreExpression : public Expression {
